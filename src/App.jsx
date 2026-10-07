@@ -65,17 +65,20 @@ const BellIcon = () => (
 )
 
 const initialTickets = [
-  { id: 'TKT-1048', title: 'Unable to connect to office Wi-Fi', requester: 'Maria Santos', initials: 'MS', category: 'Network', priority: 'High', status: 'Open', submitted: '8 min ago' },
-  { id: 'TKT-1047', title: 'Microsoft Teams microphone not detected', requester: 'Joshua Lim', initials: 'JL', category: 'Software', priority: 'Medium', status: 'In progress', submitted: '24 min ago' },
-  { id: 'TKT-1046', title: 'Request for shared drive access', requester: 'Anna Reyes', initials: 'AR', category: 'Access', priority: 'Low', status: 'Open', submitted: '1 hr ago' },
-  { id: 'TKT-1045', title: 'Laptop freezes during startup', requester: 'Carlo Mendoza', initials: 'CM', category: 'Hardware', priority: 'High', status: 'In progress', submitted: '2 hrs ago' },
-  { id: 'TKT-1044', title: 'Password reset request', requester: 'Bea Cruz', initials: 'BC', category: 'Account', priority: 'Medium', status: 'Resolved', submitted: 'Yesterday' },
-  { id: 'TKT-1043', title: 'Printer queue is not responding', requester: 'Noel Garcia', initials: 'NG', category: 'Hardware', priority: 'Low', status: 'Resolved', submitted: 'Yesterday' },
+  { id: 'TKT-1048', title: 'Unable to connect to office Wi-Fi', requester: 'Maria Santos', initials: 'MS', email: 'maria.santos@company.test', department: 'Finance', category: 'Network', priority: 'High', status: 'Open', submitted: '8 min ago', created: 'Oct 7, 2026 at 10:42 PM', updated: 'Oct 7, 2026 at 10:42 PM', description: 'My laptop disconnects from the office Wi-Fi every few minutes. I have restarted it and forgotten the network, but the issue continues.' },
+  { id: 'TKT-1047', title: 'Microsoft Teams microphone not detected', requester: 'Joshua Lim', initials: 'JL', email: 'joshua.lim@company.test', department: 'Sales', category: 'Software', priority: 'Medium', status: 'In progress', submitted: '24 min ago', created: 'Oct 7, 2026 at 10:26 PM', updated: 'Oct 7, 2026 at 10:34 PM', description: 'Teams cannot find my headset microphone during calls, although the headset works in other applications.' },
+  { id: 'TKT-1046', title: 'Request for shared drive access', requester: 'Anna Reyes', initials: 'AR', email: 'anna.reyes@company.test', department: 'Operations', category: 'Access', priority: 'Low', status: 'Open', submitted: '1 hr ago', created: 'Oct 7, 2026 at 9:48 PM', updated: 'Oct 7, 2026 at 9:48 PM', description: 'Please grant me access to the Operations shared drive for the quarterly inventory review.' },
+  { id: 'TKT-1045', title: 'Laptop freezes during startup', requester: 'Carlo Mendoza', initials: 'CM', email: 'carlo.mendoza@company.test', department: 'Marketing', category: 'Hardware', priority: 'High', status: 'In progress', submitted: '2 hrs ago', created: 'Oct 7, 2026 at 8:53 PM', updated: 'Oct 7, 2026 at 9:20 PM', description: 'The company laptop becomes unresponsive on the loading screen and requires several restarts before reaching the desktop.' },
+  { id: 'TKT-1044', title: 'Password reset request', requester: 'Bea Cruz', initials: 'BC', email: 'bea.cruz@company.test', department: 'Human Resources', category: 'Account', priority: 'Medium', status: 'Resolved', submitted: 'Yesterday', created: 'Oct 6, 2026 at 4:16 PM', updated: 'Oct 6, 2026 at 4:31 PM', description: 'I am locked out of my employee account after changing phones and need my password reset.' },
+  { id: 'TKT-1043', title: 'Printer queue is not responding', requester: 'Noel Garcia', initials: 'NG', email: 'noel.garcia@company.test', department: 'Administration', category: 'Hardware', priority: 'Low', status: 'Resolved', submitted: 'Yesterday', created: 'Oct 6, 2026 at 2:05 PM', updated: 'Oct 6, 2026 at 3:12 PM', description: 'Documents sent to the second-floor printer stay in the queue and never begin printing.' },
 ]
 
 function App() {
   const [tickets, setTickets] = useState(initialTickets)
   const [updatedTicket, setUpdatedTicket] = useState(null)
+  const [selectedTicketId, setSelectedTicketId] = useState(null)
+
+  const selectedTicket = tickets.find((ticket) => ticket.id === selectedTicketId)
 
   const updateTicketStatus = (ticketId, status) => {
     setTickets((currentTickets) =>
@@ -189,6 +192,7 @@ function App() {
                     <th scope="col">Priority</th>
                     <th scope="col">Status</th>
                     <th scope="col">Submitted</th>
+                    <th scope="col"><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -222,6 +226,11 @@ function App() {
                         </label>
                       </td>
                       <td data-label="Submitted"><time>{ticket.submitted}</time></td>
+                      <td className="actions-cell">
+                        <button className="details-button" onClick={() => setSelectedTicketId(ticket.id)} type="button">
+                          View details <span aria-hidden="true">→</span>
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -230,6 +239,49 @@ function App() {
           </section>
         </section>
       </main>
+
+      {selectedTicket && (
+        <div className="details-layer" role="presentation">
+          <button className="details-backdrop" aria-label="Close ticket details" onClick={() => setSelectedTicketId(null)} type="button" />
+          <aside aria-labelledby="details-title" aria-modal="true" className="details-panel" role="dialog">
+            <header className="details-header">
+              <div>
+                <p className="eyebrow">Ticket details</p>
+                <span>{selectedTicket.id}</span>
+              </div>
+              <button className="close-button" aria-label="Close ticket details" onClick={() => setSelectedTicketId(null)} type="button">×</button>
+            </header>
+
+            <div className="details-content">
+              <div className="details-title-row">
+                <span className={`priority priority-${selectedTicket.priority.toLowerCase()}`}><i />{selectedTicket.priority} priority</span>
+                <span className={`status detail-status status-${selectedTicket.status.toLowerCase().replace(' ', '-')}`}>{selectedTicket.status}</span>
+              </div>
+              <h2 id="details-title">{selectedTicket.title}</h2>
+
+              <section className="description-card">
+                <h3>Description</h3>
+                <p>{selectedTicket.description}</p>
+              </section>
+
+              <section className="detail-section">
+                <h3>Requester</h3>
+                <div className="requester-profile">
+                  <span className="requester-avatar detail-avatar">{selectedTicket.initials}</span>
+                  <div><strong>{selectedTicket.requester}</strong><a href={`mailto:${selectedTicket.email}`}>{selectedTicket.email}</a></div>
+                </div>
+              </section>
+
+              <dl className="detail-grid">
+                <div><dt>Department</dt><dd>{selectedTicket.department}</dd></div>
+                <div><dt>Category</dt><dd>{selectedTicket.category}</dd></div>
+                <div><dt>Created</dt><dd>{selectedTicket.created}</dd></div>
+                <div><dt>Last updated</dt><dd>{selectedTicket.updated}</dd></div>
+              </dl>
+            </div>
+          </aside>
+        </div>
+      )}
     </div>
   )
 }
