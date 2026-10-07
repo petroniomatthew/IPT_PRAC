@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const Icon = ({ children, size = 20 }) => (
   <svg
@@ -57,6 +57,13 @@ const SearchIcon = () => (
   </Icon>
 )
 
+const RefreshIcon = () => (
+  <Icon size={17}>
+    <path d="M20 6v5h-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+    <path d="M18.2 15a7.5 7.5 0 1 1-.3-8.4L20 11" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+  </Icon>
+)
+
 const BellIcon = () => (
   <Icon>
     <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 8h18c0-1-3-1-3-8Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
@@ -74,11 +81,33 @@ const initialTickets = [
 ]
 
 function App() {
-  const [tickets, setTickets] = useState(initialTickets)
+  const [tickets, setTickets] = useState([])
+  const [loadState, setLoadState] = useState('loading')
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [updatedTicket, setUpdatedTicket] = useState(null)
   const [selectedTicketId, setSelectedTicketId] = useState(null)
 
   const selectedTicket = tickets.find((ticket) => ticket.id === selectedTicketId)
+
+  useEffect(() => {
+    setLoadState('loading')
+    setUpdatedTicket(null)
+
+    const loadingTimer = window.setTimeout(() => {
+      const shouldShowDemoError = new URLSearchParams(window.location.search).get('ticketError') === 'true'
+
+      if (shouldShowDemoError && loadAttempt === 0) {
+        setTickets([])
+        setLoadState('error')
+        return
+      }
+
+      setTickets(initialTickets)
+      setLoadState('success')
+    }, 700)
+
+    return () => window.clearTimeout(loadingTimer)
+  }, [loadAttempt])
 
   const updateTicketStatus = (ticketId, status) => {
     setTickets((currentTickets) =>
@@ -95,10 +124,10 @@ function App() {
   )
 
   const stats = [
-    { label: 'Total tickets', value: tickets.length, detail: 'All support requests', icon: <TicketIcon />, tone: 'blue' },
-    { label: 'Open tickets', value: ticketCounts.Open, detail: 'Waiting for support', icon: <AlertIcon />, tone: 'orange' },
-    { label: 'In progress', value: ticketCounts['In progress'], detail: 'Currently being handled', icon: <ClockIcon />, tone: 'violet' },
-    { label: 'Resolved', value: ticketCounts.Resolved, detail: 'Successfully completed', icon: <CheckIcon />, tone: 'green' },
+    { label: 'Total tickets', value: loadState === 'success' ? tickets.length : '—', detail: 'All support requests', icon: <TicketIcon />, tone: 'blue' },
+    { label: 'Open tickets', value: loadState === 'success' ? ticketCounts.Open : '—', detail: 'Waiting for support', icon: <AlertIcon />, tone: 'orange' },
+    { label: 'In progress', value: loadState === 'success' ? ticketCounts['In progress'] : '—', detail: 'Currently being handled', icon: <ClockIcon />, tone: 'violet' },
+    { label: 'Resolved', value: loadState === 'success' ? ticketCounts.Resolved : '—', detail: 'Successfully completed', icon: <CheckIcon />, tone: 'green' },
   ]
 
   return (
@@ -112,7 +141,7 @@ function App() {
         <nav aria-label="Main navigation">
           <p className="nav-label">Workspace</p>
           <a className="nav-item active" href="#dashboard"><DashboardIcon /> Dashboard</a>
-          <a className="nav-item" href="#tickets"><TicketIcon /> Tickets <span className="nav-count">{tickets.length}</span></a>
+          <a className="nav-item" href="#tickets"><TicketIcon /> Tickets <span className="nav-count">{loadState === 'success' ? tickets.length : '—'}</span></a>
         </nav>
 
         <div className="support-card">
@@ -171,7 +200,7 @@ function App() {
                 <h2>Recent tickets</h2>
                 <p>All employee support requests in one place.</p>
               </div>
-              <p className="ticket-total"><strong>{tickets.length}</strong> total tickets</p>
+              <p className="ticket-total"><strong>{loadState === 'success' ? tickets.length : '—'}</strong> total tickets</p>
             </div>
 
             {updatedTicket && (
@@ -182,7 +211,32 @@ function App() {
               </div>
             )}
 
-            <div className="table-scroll">
+            {loadState === 'loading' && (
+              <div className="loading-state" aria-live="polite" aria-busy="true">
+                <div className="loading-heading">
+                  <span className="spinner" />
+                  <div><strong>Loading tickets</strong><p>Getting the latest support requests…</p></div>
+                </div>
+                <div className="skeleton-table" aria-hidden="true">
+                  {[1, 2, 3, 4].map((row) => (
+                    <div className="skeleton-row" key={row}>
+                      <span className="skeleton wide" /><span className="skeleton medium" /><span className="skeleton short" /><span className="skeleton short" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {loadState === 'error' && (
+              <div className="error-state" role="alert">
+                <span className="error-icon"><AlertIcon /></span>
+                <h3>We couldn’t load the tickets</h3>
+                <p>Something interrupted the request. Check your connection and try again.</p>
+                <button onClick={() => setLoadAttempt((attempt) => attempt + 1)} type="button"><RefreshIcon /> Try again</button>
+              </div>
+            )}
+
+            {loadState === 'success' && <div className="table-scroll">
               <table className="ticket-table">
                 <thead>
                   <tr>
@@ -235,7 +289,7 @@ function App() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </div>}
           </section>
         </section>
       </main>
