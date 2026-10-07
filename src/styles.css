@@ -97,6 +97,11 @@ h1 { font-size: clamp(27px, 3vw, 36px); letter-spacing: -.04em; margin: 3px 0 7p
 .secondary-button span { margin-left: 7px; }
 .ticket-total { align-items: center; background: #f6f7fa; border: 1px solid #e7e9ef; border-radius: 999px; color: #7a8497; display: flex; font-size: 11px; gap: 4px; margin: 0; padding: 7px 12px; }
 .ticket-total strong { color: #364158; font-size: 12px; }
+.update-confirmation { align-items: center; background: #f0fbf5; border-bottom: 1px solid #d8f1e4; color: #397158; display: flex; gap: 10px; padding: 10px 26px; }
+.update-confirmation > span { align-items: center; background: #d8f3e5; border-radius: 50%; color: #299664; display: flex; height: 27px; justify-content: center; width: 27px; }
+.update-confirmation > span .icon { height: 15px; width: 15px; }
+.update-confirmation p { font-size: 11px; margin: 0; }
+.update-confirmation button { background: transparent; border: 0; color: #67907a; font-size: 20px; line-height: 1; margin-left: auto; padding: 2px 6px; }
 .table-scroll { overflow-x: auto; }
 .ticket-table { border-collapse: collapse; min-width: 880px; table-layout: fixed; width: 100%; }
 .ticket-table th { background: #fafbfc; color: #8992a4; font-size: 10px; font-weight: 700; letter-spacing: .09em; padding: 12px 18px; text-align: left; text-transform: uppercase; }
@@ -120,7 +125,10 @@ h1 { font-size: clamp(27px, 3vw, 36px); letter-spacing: -.04em; margin: 3px 0 7p
 .priority-high i { background: #ef6464; }
 .priority-medium i { background: #eba94e; }
 .priority-low i { background: #6a9de8; }
-.status { border-radius: 999px; display: inline-block; font-size: 10px; font-weight: 700; padding: 5px 9px; white-space: nowrap; }
+.status-control { align-items: center; border-radius: 999px; display: inline-flex; position: relative; }
+.status-control select { appearance: none; background: transparent; border: 0; border-radius: inherit; color: inherit; cursor: pointer; font-size: 10px; font-weight: 700; outline: 0; padding: 5px 24px 5px 9px; }
+.status-control select:focus-visible { box-shadow: 0 0 0 3px rgba(84, 108, 224, .22); }
+.select-arrow { font-size: 13px; pointer-events: none; position: absolute; right: 8px; top: 3px; }
 .status-open { background: #fff0e4; color: #c66d29; }
 .status-in-progress { background: #eee9fc; color: #7553bd; }
 .status-resolved { background: #e4f7ed; color: #258b59; }

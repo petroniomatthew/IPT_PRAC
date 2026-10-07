@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 const Icon = ({ children, size = 20 }) => (
   <svg
     aria-hidden="true"
@@ -62,7 +64,7 @@ const BellIcon = () => (
   </Icon>
 )
 
-const tickets = [
+const initialTickets = [
   { id: 'TKT-1048', title: 'Unable to connect to office Wi-Fi', requester: 'Maria Santos', initials: 'MS', category: 'Network', priority: 'High', status: 'Open', submitted: '8 min ago' },
   { id: 'TKT-1047', title: 'Microsoft Teams microphone not detected', requester: 'Joshua Lim', initials: 'JL', category: 'Software', priority: 'Medium', status: 'In progress', submitted: '24 min ago' },
   { id: 'TKT-1046', title: 'Request for shared drive access', requester: 'Anna Reyes', initials: 'AR', category: 'Access', priority: 'Low', status: 'Open', submitted: '1 hr ago' },
@@ -72,6 +74,18 @@ const tickets = [
 ]
 
 function App() {
+  const [tickets, setTickets] = useState(initialTickets)
+  const [updatedTicket, setUpdatedTicket] = useState(null)
+
+  const updateTicketStatus = (ticketId, status) => {
+    setTickets((currentTickets) =>
+      currentTickets.map((ticket) =>
+        ticket.id === ticketId ? { ...ticket, status } : ticket,
+      ),
+    )
+    setUpdatedTicket({ id: ticketId, status })
+  }
+
   const ticketCounts = tickets.reduce(
     (counts, ticket) => ({ ...counts, [ticket.status]: counts[ticket.status] + 1 }),
     { Open: 0, 'In progress': 0, Resolved: 0 },
@@ -157,6 +171,14 @@ function App() {
               <p className="ticket-total"><strong>{tickets.length}</strong> total tickets</p>
             </div>
 
+            {updatedTicket && (
+              <div className="update-confirmation" role="status">
+                <span><CheckIcon /></span>
+                <p><strong>{updatedTicket.id}</strong> moved to {updatedTicket.status}.</p>
+                <button aria-label="Dismiss status update message" onClick={() => setUpdatedTicket(null)} type="button">×</button>
+              </div>
+            )}
+
             <div className="table-scroll">
               <table className="ticket-table">
                 <thead>
@@ -184,7 +206,21 @@ function App() {
                       </td>
                       <td data-label="Category"><span className="category-label">{ticket.category}</span></td>
                       <td data-label="Priority"><span className={`priority priority-${ticket.priority.toLowerCase()}`}><i />{ticket.priority}</span></td>
-                      <td data-label="Status"><span className={`status status-${ticket.status.toLowerCase().replace(' ', '-')}`}>{ticket.status}</span></td>
+                      <td data-label="Status">
+                        <label className={`status-control status-${ticket.status.toLowerCase().replace(' ', '-')}`}>
+                          <span className="sr-only">Update status for {ticket.id}</span>
+                          <select
+                            aria-label={`Update status for ${ticket.id}`}
+                            onChange={(event) => updateTicketStatus(ticket.id, event.target.value)}
+                            value={ticket.status}
+                          >
+                            <option value="Open">Open</option>
+                            <option value="In progress">In progress</option>
+                            <option value="Resolved">Resolved</option>
+                          </select>
+                          <span className="select-arrow" aria-hidden="true">⌄</span>
+                        </label>
+                      </td>
                       <td data-label="Submitted"><time>{ticket.submitted}</time></td>
                     </tr>
                   ))}
