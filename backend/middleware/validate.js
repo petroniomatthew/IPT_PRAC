@@ -17,10 +17,11 @@ function validateTicket(req, res, next) {
   next();
 }
 
-const STATUSES = ["open", "in_progress", "resolved"];
+const STATUSES = ["open", "in-progress", "resolved", "closed"];
 
 function validateStatus(req, res, next) {
   const { status } = req.body || {};
+  if (status === undefined) return next();
   if (!STATUSES.includes(status)) {
     return fail(res, "Validation failed", 400, [
       `Status must be one of: ${STATUSES.join(", ")}`,

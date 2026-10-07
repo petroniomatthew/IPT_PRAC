@@ -3,6 +3,7 @@ import './App.css'
 
 const STORAGE_KEY = 'employee-tickets'
 const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || ''
+const AUTH_TOKEN = import.meta.env.VITE_AUTH_TOKEN || ''
 const initialForm = {
   title: '',
   description: '',
@@ -18,20 +19,42 @@ const readStoredTickets = () => {
 }
 
 const normalizeTickets = (data) => {
-  if (Array.isArray(data)) {
-    return data
-  }
+  const tickets = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.tickets)
+      ? data.tickets
+      : Array.isArray(data?.data)
+        ? data.data
+        : []
 
-  return Array.isArray(data?.tickets) ? data.tickets : []
+  return tickets.map(normalizeTicketShape)
 }
+
+const formatStatus = (status = 'open') => ({
+  open: 'Open',
+  'in-progress': 'In Progress',
+  resolved: 'Resolved',
+  closed: 'Closed',
+}[status] || status)
+
+const normalizeTicketShape = (ticket) => ({
+  ...ticket,
+  id: ticket.id || ticket._id,
+  status: formatStatus(ticket.status),
+})
 
 const normalizeTicket = (data) => {
   if (!data) {
     return null
   }
 
-  return data.ticket || data
+  return normalizeTicketShape(data.ticket || data.data || data)
 }
+
+const apiHeaders = (includeJson = false) => ({
+  ...(includeJson ? { 'Content-Type': 'application/json' } : {}),
+  ...(AUTH_TOKEN ? { Authorization: `Bearer ${AUTH_TOKEN}` } : {}),
+})
 
 function App() {
   const [form, setForm] = useState(initialForm)
@@ -52,7 +75,7 @@ function App() {
 
     const loadTickets = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/tickets`)
+        const response = await fetch(`${API_URL}/api/tickets`, { headers: apiHeaders() })
 
         if (!response.ok) {
           throw new Error(`Unable to load tickets (${response.status}).`)
@@ -145,7 +168,7 @@ function App() {
       if (API_URL) {
         const response = await fetch(`${API_URL}/api/tickets`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: apiHeaders(true),
           body: JSON.stringify(ticketData),
         })
 

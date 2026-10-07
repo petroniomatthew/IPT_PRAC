@@ -1,5 +1,38 @@
 import { useEffect, useState } from 'react'
 
+const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || ''
+const AUTH_TOKEN = import.meta.env.VITE_AUTH_TOKEN || ''
+
+const apiHeaders = (includeJson = false) => ({
+  ...(includeJson ? { 'Content-Type': 'application/json' } : {}),
+  ...(AUTH_TOKEN ? { Authorization: `Bearer ${AUTH_TOKEN}` } : {}),
+})
+
+const titleCase = (value = '') => value
+  .replace('-', ' ')
+  .replace(/\b\w/g, (letter) => letter.toUpperCase())
+
+const normalizeSupportTicket = (ticket) => {
+  const requester = ticket.createdBy?.name || ticket.requester || 'Employee'
+  const createdAt = ticket.createdAt ? new Date(ticket.createdAt) : new Date()
+  const updatedAt = ticket.updatedAt ? new Date(ticket.updatedAt) : createdAt
+
+  return {
+    ...ticket,
+    id: ticket.id || ticket._id,
+    requester,
+    initials: requester.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase(),
+    email: ticket.createdBy?.email || ticket.email || 'Not provided',
+    department: ticket.department || 'General',
+    category: ticket.category || 'Support',
+    priority: titleCase(ticket.priority || 'medium'),
+    status: titleCase(ticket.status || 'open'),
+    submitted: createdAt.toLocaleDateString(),
+    created: createdAt.toLocaleString(),
+    updated: updatedAt.toLocaleString(),
+  }
+}
+
 const Icon = ({ children, size = 20 }) => (
   <svg
     aria-hidden="true"
@@ -93,7 +126,10 @@ function App() {
     setLoadState('loading')
     setUpdatedTicket(null)
 
-    const loadingTimer = window.setTimeout(() => {
+    let isActive = true
+    let loadingTimer
+
+    const loadTickets = async () => {
       const shouldShowDemoError = new URLSearchParams(window.location.search).get('ticketError') === 'true'
 
       if (shouldShowDemoError && loadAttempt === 0) {
@@ -102,20 +138,63 @@ function App() {
         return
       }
 
-      setTickets(initialTickets)
-      setLoadState('success')
-    }, 700)
+      if (!API_URL) {
+        loadingTimer = window.setTimeout(() => {
+          if (isActive) {
+            setTickets(initialTickets)
+            setLoadState('success')
+          }
+        }, 700)
+        return
+      }
 
-    return () => window.clearTimeout(loadingTimer)
+      try {
+        const response = await fetch(`${API_URL}/api/tickets`, { headers: apiHeaders() })
+        if (!response.ok) throw new Error(`Unable to load tickets (${response.status}).`)
+        const payload = await response.json()
+        if (isActive) {
+          setTickets((payload.data || payload.tickets || []).map(normalizeSupportTicket))
+          setLoadState('success')
+        }
+      } catch {
+        if (isActive) setLoadState('error')
+      }
+    }
+
+    loadTickets()
+
+    return () => {
+      isActive = false
+      if (loadingTimer) window.clearTimeout(loadingTimer)
+    }
   }, [loadAttempt])
 
-  const updateTicketStatus = (ticketId, status) => {
+  const updateTicketStatus = async (ticketId, status) => {
+    const previousStatus = tickets.find((ticket) => ticket.id === ticketId)?.status
     setTickets((currentTickets) =>
       currentTickets.map((ticket) =>
         ticket.id === ticketId ? { ...ticket, status } : ticket,
       ),
     )
     setUpdatedTicket({ id: ticketId, status })
+
+    if (!API_URL) return
+
+    try {
+      const response = await fetch(`${API_URL}/api/tickets/${ticketId}`, {
+        method: 'PUT',
+        headers: apiHeaders(true),
+        body: JSON.stringify({ status: status.toLowerCase().replace(' ', '-') }),
+      })
+      if (!response.ok) throw new Error('Status update failed')
+    } catch {
+      setTickets((currentTickets) =>
+        currentTickets.map((ticket) =>
+          ticket.id === ticketId ? { ...ticket, status: previousStatus } : ticket,
+        ),
+      )
+      setUpdatedTicket({ id: ticketId, status: previousStatus, error: true })
+    }
   }
 
   const ticketCounts = tickets.reduce(
@@ -204,9 +283,9 @@ function App() {
             </div>
 
             {updatedTicket && (
-              <div className="update-confirmation" role="status">
-                <span><CheckIcon /></span>
-                <p><strong>{updatedTicket.id}</strong> moved to {updatedTicket.status}.</p>
+              <div className={`update-confirmation ${updatedTicket.error ? 'update-error' : ''}`} role="status">
+                <span>{updatedTicket.error ? <AlertIcon /> : <CheckIcon />}</span>
+                <p>{updatedTicket.error ? <>Couldn’t update <strong>{updatedTicket.id}</strong>. Its previous status was restored.</> : <><strong>{updatedTicket.id}</strong> moved to {updatedTicket.status}.</>}</p>
                 <button aria-label="Dismiss status update message" onClick={() => setUpdatedTicket(null)} type="button">×</button>
               </div>
             )}
