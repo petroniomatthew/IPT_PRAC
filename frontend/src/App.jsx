@@ -38,6 +38,14 @@ function App() {
       .some((value) => value.toLowerCase().includes(query))
   })
 
+  const statusCounts = tickets.reduce(
+    (counts, ticket) => ({
+      ...counts,
+      [ticket.status]: (counts[ticket.status] || 0) + 1,
+    }),
+    {},
+  )
+
   const handleChange = (event) => {
     const { name, value } = event.target
 
@@ -172,6 +180,21 @@ function App() {
             </span>
           </div>
 
+          <div className="status-summary" aria-label="Ticket status summary">
+            <div className="status-summary-item">
+              <span className="status-summary-label">Open</span>
+              <strong>{statusCounts.Open || 0}</strong>
+            </div>
+            <div className="status-summary-item">
+              <span className="status-summary-label">In progress</span>
+              <strong>{statusCounts['In Progress'] || 0}</strong>
+            </div>
+            <div className="status-summary-item">
+              <span className="status-summary-label">Resolved</span>
+              <strong>{statusCounts.Resolved || 0}</strong>
+            </div>
+          </div>
+
           <div className="search-field">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="m21 21-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />
@@ -210,7 +233,13 @@ function App() {
                   <div className="ticket-item-main">
                     <div className="ticket-meta">
                       <span className="ticket-id">{ticket.id}</span>
-                      <span className="status-badge">{ticket.status}</span>
+                      <div className={`status-badge status-${ticket.status.toLowerCase().replaceAll(' ', '-')}`}>
+                        <span className="status-dot" aria-hidden="true" />
+                        <span>
+                          <small>Current status</small>
+                          {ticket.status}
+                        </span>
+                      </div>
                     </div>
                     <h3>{ticket.title}</h3>
                     <p>{ticket.description}</p>
