@@ -12,6 +12,13 @@ const titleCase = (value = '') => value
   .replace('-', ' ')
   .replace(/\b\w/g, (letter) => letter.toUpperCase())
 
+const normalizeSupportStatus = (status = 'open') => ({
+  open: 'Open',
+  'in-progress': 'In progress',
+  resolved: 'Resolved',
+  closed: 'Closed',
+}[status] || status)
+
 const normalizeSupportTicket = (ticket) => {
   const requester = ticket.createdBy?.name || ticket.requester || 'Employee'
   const createdAt = ticket.createdAt ? new Date(ticket.createdAt) : new Date()
@@ -26,7 +33,7 @@ const normalizeSupportTicket = (ticket) => {
     department: ticket.department || 'General',
     category: ticket.category || 'Support',
     priority: titleCase(ticket.priority || 'medium'),
-    status: titleCase(ticket.status || 'open'),
+    status: normalizeSupportStatus(ticket.status),
     submitted: createdAt.toLocaleDateString(),
     created: createdAt.toLocaleString(),
     updated: updatedAt.toLocaleString(),
