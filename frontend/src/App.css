@@ -185,6 +185,12 @@ textarea[aria-invalid='true'] {
   transform: translateY(-1px);
 }
 
+.submit-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+  transform: none;
+}
+
 .submit-button:focus-visible {
   outline: 3px solid rgba(47, 111, 235, 0.3);
   outline-offset: 3px;
@@ -228,6 +234,80 @@ textarea[aria-invalid='true'] {
   margin: 0;
   color: #397653;
   font-size: 0.88rem;
+}
+
+.error-message,
+.api-error {
+  display: flex;
+  gap: 13px;
+  margin-top: 26px;
+  padding: 16px 18px;
+  border: 1px solid #f0c2c2;
+  border-radius: 12px;
+  color: #9d2929;
+  background: #fff5f5;
+}
+
+.error-message > span {
+  display: grid;
+  flex: 0 0 auto;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffffff;
+  background: #d84444;
+  font-weight: 800;
+}
+
+.error-message strong,
+.api-error strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.error-message p,
+.api-error p {
+  margin: 0;
+  color: #a84f4f;
+  font-size: 0.88rem;
+}
+
+.api-error {
+  margin-bottom: 20px;
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 120px;
+  border: 1px dashed #cbd6e5;
+  border-radius: 16px;
+  color: #68758a;
+  background: #fafcff;
+}
+
+.loading-state p {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #cfe0ff;
+  border-top-color: #2f6feb;
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .tickets-section {

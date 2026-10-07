@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import './App.css'
 
 const STORAGE_KEY = 'employee-tickets'
+const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || ''
 const initialForm = {
   title: '',
   description: '',
@@ -16,15 +17,74 @@ const readStoredTickets = () => {
   }
 }
 
+const normalizeTickets = (data) => {
+  if (Array.isArray(data)) {
+    return data
+  }
+
+  return Array.isArray(data?.tickets) ? data.tickets : []
+}
+
+const normalizeTicket = (data) => {
+  if (!data) {
+    return null
+  }
+
+  return data.ticket || data
+}
+
 function App() {
   const [form, setForm] = useState(initialForm)
   const [errors, setErrors] = useState({})
   const [submitted, setSubmitted] = useState(false)
   const [tickets, setTickets] = useState(readStoredTickets)
   const [searchTerm, setSearchTerm] = useState('')
+  const [isLoading, setIsLoading] = useState(Boolean(API_URL))
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [apiError, setApiError] = useState('')
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets))
+    if (!API_URL) {
+      return
+    }
+
+    let isActive = true
+
+    const loadTickets = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/tickets`)
+
+        if (!response.ok) {
+          throw new Error(`Unable to load tickets (${response.status}).`)
+        }
+
+        const data = await response.json()
+        if (isActive) {
+          setTickets(normalizeTickets(data))
+          setApiError('')
+        }
+      } catch (error) {
+        if (isActive) {
+          setApiError(error instanceof Error ? error.message : 'Unable to load tickets.')
+        }
+      } finally {
+        if (isActive) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    loadTickets()
+
+    return () => {
+      isActive = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!API_URL) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets))
+    }
   }, [tickets])
 
   const filteredTickets = tickets.filter((ticket) => {
@@ -54,7 +114,7 @@ function App() {
     setSubmitted(false)
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
 
     const nextErrors = {}
@@ -73,17 +133,50 @@ function App() {
       return
     }
 
-    const ticket = {
-      id: `TKT-${Date.now().toString().slice(-6)}`,
-      title: form.title.trim(),
-      description: form.description.trim(),
-      status: 'Open',
-      createdAt: new Date().toISOString(),
-    }
+    setIsSubmitting(true)
+    setApiError('')
 
-    setTickets((current) => [ticket, ...current])
-    setSubmitted(true)
-    setForm(initialForm)
+    try {
+      const ticketData = {
+        title: form.title.trim(),
+        description: form.description.trim(),
+      }
+
+      if (API_URL) {
+        const response = await fetch(`${API_URL}/api/tickets`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(ticketData),
+        })
+
+        if (!response.ok) {
+          throw new Error(`Unable to submit ticket (${response.status}).`)
+        }
+
+        const data = normalizeTicket(await response.json())
+        if (!data) {
+          throw new Error('The API returned an invalid ticket response.')
+        }
+
+        setTickets((current) => [data, ...current])
+      } else {
+        const ticket = {
+          id: `TKT-${Date.now().toString().slice(-6)}`,
+          ...ticketData,
+          status: 'Open',
+          createdAt: new Date().toISOString(),
+        }
+
+        setTickets((current) => [ticket, ...current])
+      }
+
+      setSubmitted(true)
+      setForm(initialForm)
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : 'Unable to submit ticket.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -150,12 +243,22 @@ function App() {
             </div>
 
             <div className="form-actions">
-              <button className="submit-button" type="submit">
-                Submit ticket
+              <button className="submit-button" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Submitting...' : 'Submit ticket'}
                 <span aria-hidden="true">→</span>
               </button>
               <p className="form-note">Fields marked with information are required.</p>
             </div>
+
+            {apiError && (
+              <div className="error-message" role="alert">
+                <span aria-hidden="true">!</span>
+                <div>
+                  <strong>Unable to submit ticket</strong>
+                  <p>{apiError}</p>
+                </div>
+              </div>
+            )}
 
             {submitted && (
               <div className="success-message" role="status">
@@ -206,6 +309,7 @@ function App() {
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Search by ID, title, or description"
+              disabled={isLoading}
             />
             {searchTerm && (
               <button type="button" onClick={() => setSearchTerm('')} aria-label="Clear search">
@@ -214,7 +318,19 @@ function App() {
             )}
           </div>
 
-          {tickets.length === 0 ? (
+          {apiError && (
+            <div className="api-error" role="alert">
+              <strong>Unable to load tickets</strong>
+              <p>{apiError}</p>
+            </div>
+          )}
+
+          {isLoading ? (
+            <div className="loading-state" role="status">
+              <span className="loading-spinner" aria-hidden="true" />
+              <p>Loading tickets...</p>
+            </div>
+          ) : tickets.length === 0 ? (
             <div className="empty-state">
               <span aria-hidden="true">✦</span>
               <h3>No tickets yet</h3>
