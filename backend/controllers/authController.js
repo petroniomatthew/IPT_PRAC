@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 
+// Register
 const register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
@@ -27,6 +28,7 @@ const register = async (req, res, next) => {
   }
 };
 
+// Login
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -39,7 +41,10 @@ const login = async (req, res, next) => {
       });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      user.password
+    );
 
     if (!isPasswordValid) {
       return res.status(401).json({
@@ -47,7 +52,7 @@ const login = async (req, res, next) => {
       });
     }
 
-    return res.status(200).json({
+    res.status(200).json({
       message: "Login successful",
       user: {
         id: user._id,
@@ -61,7 +66,19 @@ const login = async (req, res, next) => {
   }
 };
 
+// Logout
+const logout = async (req, res, next) => {
+  try {
+    res.status(200).json({
+      message: "Logout successful",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
+  logout,
 };
