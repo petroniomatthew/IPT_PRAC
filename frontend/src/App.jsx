@@ -21,10 +21,22 @@ function App() {
   const [errors, setErrors] = useState({})
   const [submitted, setSubmitted] = useState(false)
   const [tickets, setTickets] = useState(readStoredTickets)
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets))
   }, [tickets])
+
+  const filteredTickets = tickets.filter((ticket) => {
+    const query = searchTerm.trim().toLowerCase()
+
+    if (!query) {
+      return true
+    }
+
+    return [ticket.id, ticket.title, ticket.description]
+      .some((value) => value.toLowerCase().includes(query))
+  })
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -155,7 +167,28 @@ function App() {
               <p className="eyebrow">Your activity</p>
               <h2 id="tickets-title">Submitted tickets</h2>
             </div>
-            <span className="ticket-count">{tickets.length} {tickets.length === 1 ? 'ticket' : 'tickets'}</span>
+            <span className="ticket-count">
+              {filteredTickets.length} {filteredTickets.length === 1 ? 'ticket' : 'tickets'}
+            </span>
+          </div>
+
+          <div className="search-field">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m21 21-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />
+            </svg>
+            <label className="sr-only" htmlFor="ticket-search">Search tickets</label>
+            <input
+              id="ticket-search"
+              type="search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search by ID, title, or description"
+            />
+            {searchTerm && (
+              <button type="button" onClick={() => setSearchTerm('')} aria-label="Clear search">
+                Clear
+              </button>
+            )}
           </div>
 
           {tickets.length === 0 ? (
@@ -164,9 +197,15 @@ function App() {
               <h3>No tickets yet</h3>
               <p>Submit your first ticket using the form above.</p>
             </div>
+          ) : filteredTickets.length === 0 ? (
+            <div className="empty-state">
+              <span aria-hidden="true">⌕</span>
+              <h3>No matching tickets</h3>
+              <p>Try another title, description, or ticket ID.</p>
+            </div>
           ) : (
             <div className="ticket-list">
-              {tickets.map((ticket) => (
+              {filteredTickets.map((ticket) => (
                 <article className="ticket-item" key={ticket.id}>
                   <div className="ticket-item-main">
                     <div className="ticket-meta">
