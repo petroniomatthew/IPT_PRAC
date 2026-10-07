@@ -17,4 +17,16 @@ function validateTicket(req, res, next) {
   next();
 }
 
-module.exports = { validateTicket };
+const STATUSES = ["open", "in_progress", "resolved"];
+
+function validateStatus(req, res, next) {
+  const { status } = req.body || {};
+  if (!STATUSES.includes(status)) {
+    return fail(res, "Validation failed", 400, [
+      `Status must be one of: ${STATUSES.join(", ")}`,
+    ]);
+  }
+  next();
+}
+
+module.exports = { validateTicket, validateStatus };
