@@ -62,14 +62,28 @@ const BellIcon = () => (
   </Icon>
 )
 
-const stats = [
-  { label: 'Total tickets', value: '0', detail: 'All support requests', icon: <TicketIcon />, tone: 'blue' },
-  { label: 'Open tickets', value: '0', detail: 'Waiting for support', icon: <AlertIcon />, tone: 'orange' },
-  { label: 'In progress', value: '0', detail: 'Currently being handled', icon: <ClockIcon />, tone: 'violet' },
-  { label: 'Resolved', value: '0', detail: 'Successfully completed', icon: <CheckIcon />, tone: 'green' },
+const tickets = [
+  { id: 'TKT-1048', title: 'Unable to connect to office Wi-Fi', requester: 'Maria Santos', initials: 'MS', category: 'Network', priority: 'High', status: 'Open', submitted: '8 min ago' },
+  { id: 'TKT-1047', title: 'Microsoft Teams microphone not detected', requester: 'Joshua Lim', initials: 'JL', category: 'Software', priority: 'Medium', status: 'In progress', submitted: '24 min ago' },
+  { id: 'TKT-1046', title: 'Request for shared drive access', requester: 'Anna Reyes', initials: 'AR', category: 'Access', priority: 'Low', status: 'Open', submitted: '1 hr ago' },
+  { id: 'TKT-1045', title: 'Laptop freezes during startup', requester: 'Carlo Mendoza', initials: 'CM', category: 'Hardware', priority: 'High', status: 'In progress', submitted: '2 hrs ago' },
+  { id: 'TKT-1044', title: 'Password reset request', requester: 'Bea Cruz', initials: 'BC', category: 'Account', priority: 'Medium', status: 'Resolved', submitted: 'Yesterday' },
+  { id: 'TKT-1043', title: 'Printer queue is not responding', requester: 'Noel Garcia', initials: 'NG', category: 'Hardware', priority: 'Low', status: 'Resolved', submitted: 'Yesterday' },
 ]
 
 function App() {
+  const ticketCounts = tickets.reduce(
+    (counts, ticket) => ({ ...counts, [ticket.status]: counts[ticket.status] + 1 }),
+    { Open: 0, 'In progress': 0, Resolved: 0 },
+  )
+
+  const stats = [
+    { label: 'Total tickets', value: tickets.length, detail: 'All support requests', icon: <TicketIcon />, tone: 'blue' },
+    { label: 'Open tickets', value: ticketCounts.Open, detail: 'Waiting for support', icon: <AlertIcon />, tone: 'orange' },
+    { label: 'In progress', value: ticketCounts['In progress'], detail: 'Currently being handled', icon: <ClockIcon />, tone: 'violet' },
+    { label: 'Resolved', value: ticketCounts.Resolved, detail: 'Successfully completed', icon: <CheckIcon />, tone: 'green' },
+  ]
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -81,7 +95,7 @@ function App() {
         <nav aria-label="Main navigation">
           <p className="nav-label">Workspace</p>
           <a className="nav-item active" href="#dashboard"><DashboardIcon /> Dashboard</a>
-          <a className="nav-item" href="#tickets"><TicketIcon /> Tickets <span className="nav-count">0</span></a>
+          <a className="nav-item" href="#tickets"><TicketIcon /> Tickets <span className="nav-count">{tickets.length}</span></a>
         </nav>
 
         <div className="support-card">
@@ -138,20 +152,44 @@ function App() {
               <div>
                 <p className="eyebrow">Ticket queue</p>
                 <h2>Recent tickets</h2>
-                <p>New employee requests will appear here.</p>
+                <p>All employee support requests in one place.</p>
               </div>
-              <button className="secondary-button" type="button">View all tickets <span>→</span></button>
+              <p className="ticket-total"><strong>{tickets.length}</strong> total tickets</p>
             </div>
 
-            <div className="empty-state">
-              <div className="empty-illustration">
-                <span className="paper paper-back" />
-                <span className="paper paper-front"><TicketIcon size={32} /></span>
-                <span className="spark spark-one">+</span>
-                <span className="spark spark-two">•</span>
-              </div>
-              <h3>Your queue is clear</h3>
-              <p>There are no support tickets to review yet. New requests will show up here automatically.</p>
+            <div className="table-scroll">
+              <table className="ticket-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Ticket</th>
+                    <th scope="col">Requester</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Priority</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Submitted</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tickets.map((ticket) => (
+                    <tr key={ticket.id}>
+                      <td data-label="Ticket">
+                        <span className="ticket-id">{ticket.id}</span>
+                        <strong className="ticket-title">{ticket.title}</strong>
+                      </td>
+                      <td data-label="Requester">
+                        <span className="requester">
+                          <span className="requester-avatar">{ticket.initials}</span>
+                          {ticket.requester}
+                        </span>
+                      </td>
+                      <td data-label="Category"><span className="category-label">{ticket.category}</span></td>
+                      <td data-label="Priority"><span className={`priority priority-${ticket.priority.toLowerCase()}`}><i />{ticket.priority}</span></td>
+                      <td data-label="Status"><span className={`status status-${ticket.status.toLowerCase().replace(' ', '-')}`}>{ticket.status}</span></td>
+                      <td data-label="Submitted"><time>{ticket.submitted}</time></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </section>
         </section>
